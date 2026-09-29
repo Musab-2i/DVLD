@@ -176,46 +176,36 @@ namespace BusinessLayer
         }
         public clsLicense RenewLicense(string Notes, int CreatedByUserID)
         {
+            decimal ApplicationFees = clsApplicationTypes.Find(clsApplicationTypes.enApplicationType.RenewDrivingLicense).ApplicationFees;
 
-            clsApplication Application = new clsApplication();
-
-            Application.ApplicantPersonID = this.DriverInfo.PersonID;
-            Application.ApplicationDate = DateTime.Now;
-            Application.ApplicationTypeID = clsApplicationTypes.enApplicationType.RenewDrivingLicense;
-            Application.ApplicationStatus = clsApplication.enApplicationStatus.Completed;
-            Application.LastStatusDate = DateTime.Now;
-            Application.PaidFees = clsApplicationTypes.Find(clsApplicationTypes.enApplicationType.RenewDrivingLicense).ApplicationFees;
-            Application.CreatedByUserID = CreatedByUserID;
-
-            if (!Application.Save())
-            {
-                return null;
-            }
-
-            clsLicense NewLicense = new clsLicense();
-
-            NewLicense.ApplicationID = Application.ApplicationID;
-            NewLicense.DriverID = this.DriverID;
-            NewLicense.LicenseClassID = this.LicenseClassID;
-            NewLicense.IssueDate = DateTime.Now;
-
+            DateTime IssueDate = DateTime.Now;
             int DefaultValidityLength = this.LicenseClassInfo.ValidityLengthYear;
-            
-            NewLicense.ExpirationDate = DateTime.Now.AddYears(DefaultValidityLength);
-            NewLicense.Note = Notes;
-            NewLicense.PaidFees = this.LicenseClassInfo.ClassFees;
+            DateTime ExpirationDate = IssueDate.AddYears(DefaultValidityLength);
 
-            NewLicense.IsActive = true;
-            NewLicense.IssueReason = clsLicense.enIssueReason.Renewal;
-            NewLicense.CreatedByUserID = CreatedByUserID;
+            decimal LicenseFees = this.LicenseClassInfo.ClassFees;
 
-            if (!NewLicense.Save())
+            int NewLicenseID = clsLicenseData.RenewLicense(
+                this.DriverInfo.PersonID,
+                ApplicationFees,
+                this.DriverID,
+                this.LicenseClassID,
+                IssueDate,
+                ExpirationDate,
+                LicenseFees,
+                Notes,
+                CreatedByUserID,
+                this.LicenseID // This is the old license that we will be discontinuing.
+            );
+
+            if (NewLicenseID != -1)
+            {
+                // If the operation succeeded and returned the new license ID, load it as an object and return it to the interface
+                return clsLicense.Find(NewLicenseID);
+            }
+            else
             {
                 return null;
             }
-            DeactivateCurrentLicense();
-
-            return NewLicense;
         }
         public clsLicense Replace(enIssueReason IssueReason, int CreatedByUserID)
         {

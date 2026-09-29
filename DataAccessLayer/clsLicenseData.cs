@@ -147,6 +147,58 @@ namespace DataAccessLayer
             return (rowsAffected > 0);
         }
 
+        public static int RenewLicense(int ApplicantPersonID, decimal ApplicationFees, int DriverID, int LicenseClassID,
+                               DateTime IssueDate, DateTime ExpirationDate, decimal LicenseFees,
+                               string Notes, int CreatedByUserID, int OldLicenseID)
+        {
+            int NewLicenseID = -1;
+
+            using (SqlConnection connection = new SqlConnection(clsDataAccessSettings.ConnectionString))
+            {
+                using (SqlCommand command = new SqlCommand("SP_RenewLocalDrivingLicense", connection))
+                {
+                    command.CommandType = CommandType.StoredProcedure;
+
+                    command.Parameters.AddWithValue("@ApplicantPersonID", ApplicantPersonID);
+                    command.Parameters.AddWithValue("@ApplicationFees", ApplicationFees);
+                    command.Parameters.AddWithValue("@DriverID", DriverID);
+                    command.Parameters.AddWithValue("@LicenseClassID", LicenseClassID);
+                    command.Parameters.AddWithValue("@IssueDate", IssueDate);
+                    command.Parameters.AddWithValue("@ExpirationDate", ExpirationDate);
+                    command.Parameters.AddWithValue("@LicenseFees", LicenseFees);
+                    command.Parameters.AddWithValue("@CreatedByUserID", CreatedByUserID);
+                    command.Parameters.AddWithValue("@OldLicenseID", OldLicenseID);
+
+                    if (string.IsNullOrEmpty(Notes))
+                        command.Parameters.AddWithValue("@Notes", DBNull.Value);
+                    else
+                        command.Parameters.AddWithValue("@Notes", Notes);
+
+                    // تجهيز متغير الـ OUTPUT لاستقبال رقم الرخصة الجديدة
+                    SqlParameter outputIdParam = new SqlParameter("@NewLicenseID", SqlDbType.Int)
+                    {
+                        Direction = ParameterDirection.Output
+                    };
+                    command.Parameters.Add(outputIdParam);
+
+                    try
+                    {
+                        connection.Open();
+
+                        command.ExecuteNonQuery();
+
+                        NewLicenseID = (int)outputIdParam.Value;
+                    }
+                    catch (Exception ex)
+                    {
+                        LocalLogError(nameof(RenewLicense), ex.Message);
+                    }
+                }
+            }
+
+            return NewLicenseID;
+        }
+
         public static int GetLicenseIDByApplicationID(int ApplicationID)
         {
             int LicenseID = -1;
