@@ -191,16 +191,16 @@ namespace BusinessLayer
 
         static public bool DeletePerson(int PersonID)
         {
-            return clsPersonData.DeletePersonByID(PersonID);
+            return clsPersonData.DeletePerson(PersonID);
         }
 
         static public bool IsPersonExist(int PersonID)
         {
-            return clsPersonData.IsPersonExistByID(PersonID);
+            return clsPersonData.CheckPersonExistByID(PersonID);
         }
         static public bool IsPersonExist(string NationalNo)
         {
-            return clsPersonData.IsPersonExistByNationalNo(NationalNo);
+            return clsPersonData.CheckPersonExistByNationalNo(NationalNo);
         }
     }
 }

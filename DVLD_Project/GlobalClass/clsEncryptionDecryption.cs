@@ -9,19 +9,6 @@ namespace DVLD_Project.GlobalClass
 {
     internal static class clsEncryptionDecryption
     {
-        /*
-        public static string Encrypt(string plainText)
-        {
-            byte[] plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
-            return Convert.ToBase64String(plainTextBytes);
-        }
-
-        public static string Decrypt(string cipherText)
-        {
-            byte[] base64EncodedBytes = Convert.FromBase64String(cipherText);
-            return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
-        }
-        */
         private const string Key = "Dvld#2026!Key128";
         public static string Encrypt(string input)
         {
