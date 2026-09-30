@@ -67,68 +67,6 @@ namespace DVLD_Project.GlobalClass
                 return false;
             }
         }
-
-        // OLD way save username and password In file
-        /*
-        private static readonly string _RememberMePath = Path.Combine(Directory.GetCurrentDirectory(), "RememberMeFile.txt");
-        public static bool RememberUsernameAndPassword(string Username, string Password)
-        {
-            try
-            {
-                // If a blank username is passed, it means "clear my data" (cancel remember me).
-                if (string.IsNullOrWhiteSpace(Username))
-                {
-                    if (File.Exists(_RememberMePath))
-                    {
-                        File.Delete(_RememberMePath);
-                    }
-                    return true;
-                }
-
-                string EncryptedPassword = clsEncryptionDecryption.Encrypt(Password);
-                using (StreamWriter writer = new StreamWriter(_RememberMePath))
-                {
-                    writer.WriteLine(Username);
-                    writer.WriteLine(EncryptedPassword);
-                    writer.Flush();
-                }
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-
-        public static bool GetStoredCredential(ref string Username, ref string Password)
-        {
-            try
-            {
-                if (File.Exists(_RememberMePath))
-                {
-                    using (StreamReader reader = new StreamReader(_RememberMePath))
-                    {
-
-                        Username = reader.ReadLine();
-
-                        Password = clsEncryptionDecryption.Decrypt(reader.ReadLine());
-
-                    }
-                    return true;
-                }
-
-                else
-                {
-                    return false;
-                }
-            }
-            catch (Exception)
-            {
-                return false;
-            }
-        }
-    }
-        */
     }
 }
 

@@ -21,15 +21,12 @@ namespace DataAccessLayer
                                        byte Gender)
         {
             int PersonID = -1;
-            string query = @"INSERT INTO People 
-                    ([NationalNo],[FirstName],[SecondName],[ThirdName],[LastName],[DateOfBirth],[Gender],[Address],[PhoneNo],[Email],[NationalCountryID],[ImagePath]) 
-                    VALUES 
-                    (@NationalNo,@FirstName,@SecondName,@ThirdName,@LastName,@DateOfBirth,@Gender,@Address,@PhoneNo,@Email,@NationalCountryID,@ImagePath);
-                    SELECT SCOPE_IDENTITY();";
             using (SqlConnection connection = new SqlConnection(clsDataAccessSettings.ConnectionString))
             {
-                using (SqlCommand command = new SqlCommand(query, connection))
+                using (SqlCommand command = new SqlCommand("SP_AddNewPerson", connection))
                 {
+                    command.CommandType = CommandType.StoredProcedure;
+
                     command.Parameters.AddWithValue("@NationalNo", NationalNo);
                     command.Parameters.AddWithValue("@FirstName", FirstName);
                     command.Parameters.AddWithValue("@SecondName", SecondName);
@@ -44,14 +41,17 @@ namespace DataAccessLayer
                     command.Parameters.AddWithValue("@ThirdName", (string.IsNullOrEmpty(ThirdName)) ? (object)DBNull.Value : ThirdName);
                     command.Parameters.AddWithValue("@Email", (string.IsNullOrEmpty(Email)) ? (object)DBNull.Value : Email);
                     command.Parameters.AddWithValue("@ImagePath", (string.IsNullOrEmpty(ImagePath)) ? (object)DBNull.Value : ImagePath);
+
+                    SqlParameter outputIdParam = new SqlParameter("@NewPersonID", SqlDbType.Int)
+                    {
+                        Direction = ParameterDirection.Output
+                    };
+                    command.Parameters.Add(outputIdParam);
                     try
                     {
                         connection.Open();
-                        object Results = command.ExecuteScalar();
-                        if (Results != null && int.TryParse(Results.ToString(), out int InsertedID))
-                        {
-                            PersonID = InsertedID;
-                        }
+                        command.ExecuteNonQuery();
+                        PersonID = (int)outputIdParam.Value;
                     }
                     catch (Exception ex)
                     {
@@ -69,25 +69,13 @@ namespace DataAccessLayer
                                        byte Gender)
         {
             int RowsAffected = 0;
-            string query = @"UPDATE People 
-                     SET NationalNo = @NationalNo,
-                         FirstName = @FirstName,
-                         SecondName = @SecondName,
-                         ThirdName = @ThirdName,
-                         LastName = @LastName,
-                         DateOfBirth = @DateOfBirth,
-                         Gender = @Gender,
-                         Address = @Address,
-                         PhoneNo = @PhoneNo,
-                         Email = @Email,
-                         NationalCountryID = @NationalCountryID,
-                         ImagePath = @ImagePath
-                     WHERE PersonID = @PersonID";
 
             using (SqlConnection connection = new SqlConnection(clsDataAccessSettings.ConnectionString))
             {
-                using (SqlCommand command = new SqlCommand(query, connection))
+                using (SqlCommand command = new SqlCommand("SP_UpdatePerson", connection))
                 {
+                    command.CommandType = CommandType.StoredProcedure;
+
                     command.Parameters.AddWithValue("@PersonID", PersonID);
                     command.Parameters.AddWithValue("@NationalNo", NationalNo);
                     command.Parameters.AddWithValue("@FirstName", FirstName);
@@ -125,12 +113,11 @@ namespace DataAccessLayer
                                        ref byte Gender)
         {
             bool Found = false;
-            string query = @"SELECT * FROM People 
-                           WHERE PersonID = @PersonID";
             using (SqlConnection connection = new SqlConnection(clsDataAccessSettings.ConnectionString))
             {
-                using (SqlCommand command = new SqlCommand(query, connection))
+                using (SqlCommand command = new SqlCommand("SP_GetPersonInfoByID", connection))
                 {
+                    command.CommandType = CommandType.StoredProcedure;
                     command.Parameters.AddWithValue("@PersonID", PersonID);
                     try
                     {
@@ -175,12 +162,11 @@ namespace DataAccessLayer
                                        ref byte Gender)
         {
             bool Found = false;
-            string query = @"SELECT * FROM People 
-                           WHERE NationalNo = @NationalNo";
             using (SqlConnection connection = new SqlConnection(clsDataAccessSettings.ConnectionString))
             {
-                using (SqlCommand command = new SqlCommand(query, connection))
+                using (SqlCommand command = new SqlCommand("SP_GetPersonInfoByNationalNo", connection))
                 {
+                    command.CommandType = CommandType.StoredProcedure;
                     command.Parameters.AddWithValue("@NationalNo", NationalNo);
                     try
                     {
@@ -218,15 +204,14 @@ namespace DataAccessLayer
 
         }
 
-        public static bool DeletePersonByID(int PersonID)
+        public static bool DeletePerson(int PersonID)
         {
             int RowsAffected = 0;
-            string query = @"DELETE FROM People
-                             WHERE PersonID = @PersonID";
             using (SqlConnection connection = new SqlConnection(clsDataAccessSettings.ConnectionString))
             {
-                using (SqlCommand command = new SqlCommand(query, connection))
+                using (SqlCommand command = new SqlCommand("SP_DeletePerson", connection))
                 {
+                    command.CommandType = CommandType.StoredProcedure;
                     command.Parameters.AddWithValue("@PersonID", PersonID);
                     try
                     {
@@ -235,62 +220,69 @@ namespace DataAccessLayer
                     }
                     catch (Exception ex)
                     {
-                        LocalLogError(nameof(DeletePersonByID), ex.Message);
+                        LocalLogError(nameof(DeletePerson), ex.Message);
                     }
                 }
             }
             return (RowsAffected > 0);
         }
 
-        public static bool IsPersonExistByID(int PersonID)
+        public static bool CheckPersonExistByID(int PersonID)
         {
             bool IsFound = false;
-            string query = @"SELECT Found=1 From People
-                         WHERE PersonID = @PersonID";
             using (SqlConnection connection = new SqlConnection(clsDataAccessSettings.ConnectionString))
             {
-                using (SqlCommand command = new SqlCommand(query, connection))
+                using (SqlCommand command = new SqlCommand("SP_CheckPersonExistByID", connection))
                 {
+                    command.CommandType = CommandType.StoredProcedure;
                     command.Parameters.AddWithValue("@PersonID", PersonID);
+
+                    SqlParameter returnParameter = new SqlParameter("@ReturnVal", SqlDbType.Int)
+                    {
+                        Direction = ParameterDirection.ReturnValue
+                    };
+
+                    command.Parameters.Add(returnParameter);
+
                     try
                     {
                         connection.Open();
-                        object Result = command.ExecuteScalar();
-                        if (Result != null)
-                        {
-                            IsFound = true;
-                        }
+                        command.ExecuteNonQuery();
+                        IsFound = (int)returnParameter.Value == 1;
                     }
                     catch (Exception ex)
                     {
-                        LocalLogError(nameof(IsPersonExistByID), ex.Message);
+                        LocalLogError(nameof(CheckPersonExistByID), ex.Message);
                     }
                 }
             }
             return IsFound;
         }
-        public static bool IsPersonExistByNationalNo(string NationalNo)
+        public static bool CheckPersonExistByNationalNo(string NationalNo)
         {
             bool IsFound = false;
-            string query = @"SELECT Found=1 From People
-                         WHERE NationalNo = @NationalNo";
             using (SqlConnection connection = new SqlConnection(clsDataAccessSettings.ConnectionString))
             {
-                using (SqlCommand command = new SqlCommand(query, connection))
+                using (SqlCommand command = new SqlCommand("SP_CheckPersonExistByNationalNo", connection))
                 {
+                    command.CommandType = CommandType.StoredProcedure;
                     command.Parameters.AddWithValue("@NationalNo", NationalNo);
+
+                    SqlParameter returnParameter = new SqlParameter("@ReturnVal", SqlDbType.Int)
+                    {
+                        Direction = ParameterDirection.ReturnValue
+                    };
+
+                    command.Parameters.Add(returnParameter);
                     try
                     {
                         connection.Open();
-                        object Result = command.ExecuteScalar();
-                        if (Result != null)
-                        {
-                            IsFound = true;
-                        }
+                        command.ExecuteNonQuery();
+                        IsFound = (int)returnParameter.Value == 1;
                     }
                     catch (Exception ex)
                     {
-                        LocalLogError(nameof(IsPersonExistByNationalNo), ex.Message);
+                        LocalLogError(nameof(CheckPersonExistByNationalNo), ex.Message);
                     }
                 }
             }
@@ -300,22 +292,11 @@ namespace DataAccessLayer
         public static DataTable GetAllPeople()
         {
             DataTable dt = new DataTable();
-            string query = @"SELECT People.PersonID, People.NationalNo
-                          , People.FirstName, People.SecondName, People.ThirdName, People.LastName
-                          , People.DateOfBirth, People.Gender,
-                                CASE Gender
-                                    WHEN 0 THEN 'Male'
-                                    WHEN 1 THEN 'Female'
-                                    ELSE 'Unknown'
-                                END AS GendorCaption,
-                                People.Address, People.PhoneNo, People.Email, 
-                                                     People.NationalCountryID, Countries.CountryName, People.ImagePath
-                            FROM            People INNER JOIN
-                                                     Countries ON People.NationalCountryID = Countries.CountryID";
             using (SqlConnection connection = new SqlConnection(clsDataAccessSettings.ConnectionString))
             {
-                using (SqlCommand command = new SqlCommand(query, connection))
+                using (SqlCommand command = new SqlCommand("SP_GetAllPeople", connection))
                 {
+                    command.CommandType = CommandType.StoredProcedure;
                     try
                     {
                         connection.Open();
